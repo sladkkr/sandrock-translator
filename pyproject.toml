@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "sandrock-translator"
+version = "1.0.0"
+description = "My Time At Sandrock translation parsing and machine translation tool"
+authors = ["sladkkr <klimczakkarol@outlook.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+googletrans = "^3.1.0-alpha"
+progressbar = "^2.5"
+
+[tool.poetry.scripts]
+sandrock-translator = "sandrock_translator:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
