@@ -1,6 +1,11 @@
 # My Time At Sandrock translation tool
 ## Description
 sandrock-translator is a tool for translating localization files of My Time At Sandrock using popular translation API Google Translate. It handles two output formats for intermediate and final usage: JSON and Binary. JSON translation file can be used to manually fix context errors. JSON translation file as well as binary file can be used to replace text in original binary file, this technic is beneficial because some languages has longer words or contains multi-byte characters than original translation resulting in not fitting end results. This tool can't change original size of text string in bytes so those kind of workarounds were implemented.
+## Installation
+Tool is published to PYPI, use for example PIP
+```sh
+pip install --user sandrock-translator
+```
 ## Example usage
 Externalize translation strings from original binary file into editable JSON.
 ```sh
