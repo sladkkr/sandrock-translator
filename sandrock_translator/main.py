@@ -82,8 +82,8 @@ class Args(Namespace):
 		argparser = ArgumentParser(prog='sandrock-translator', epilog=f'Possible language codes: {" ".join(LANG_CODES)}')
 		argparser.add_argument('input_file', type=str, help='Path to original translation file')
 		argparser.add_argument('output_file', type=str, help='Path to target translation file')
-		argparser.add_argument('-s', '--source_lang_code', type=str, default='auto', choices=['auto', *LANG_CODES], help='Force translation source language code. auto will detect language. default: auto')
-		argparser.add_argument('-t', '--target_lang_code', type=str, default='', choices=LANG_CODES, help='Target language code. If not specified translation step will be skipped.')
+		argparser.add_argument('-s', '--source_lang_code', type=str, default='auto', choices=['auto', *LANG_CODES], metavar="SOURCE_LANG_CODE", help='Force translation source language code. auto will detect language. default: auto')
+		argparser.add_argument('-t', '--target_lang_code', type=str, default='', choices=LANG_CODES, metavar="TARGET_LANG_CODE", help='Target language code. If not specified translation step will be skipped.')
 		argparser.add_argument('-o', '--output_file_type', type=str, default='binary', choices=['binary', 'json'], help='default: binary')
 	
 		group_positions = argparser.add_argument_group('Byte positions')
