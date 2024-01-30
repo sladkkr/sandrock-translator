@@ -5,14 +5,16 @@ description = "My Time At Sandrock translation parsing and machine translation t
 authors = ["sladkkr <klimczakkarol@outlook.com>"]
 license = "MIT"
 readme = "README.md"
+packages = [{ include = "sandrock_translator" }]
+
+[tool.poetry.scripts]
+sandrock-translator = "sandrock_translator.main:cli"
 
 [tool.poetry.dependencies]
 python = "^3.11"
 googletrans = "^3.1.0-alpha"
 progressbar = "^2.5"
 
-[tool.poetry.scripts]
-sandrock-translator = "sandrock_translator:main"
 
 [build-system]
 requires = ["poetry-core"]

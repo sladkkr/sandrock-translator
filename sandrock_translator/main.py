@@ -378,7 +378,7 @@ class BinaryLocalizationParser:
 		original_bytes = file.read(stop - start + 1)
 		return BinaryLocalizationParser.parse_batch(BytesIO(original_bytes))
 
-def main():
+def cli():
 	try:
 		args = Args.parse()
 	
@@ -452,4 +452,4 @@ def main():
 		pass
 
 if __name__ == '__main__':
-	main()
+	cli()
