@@ -173,14 +173,14 @@ class TranslationUnit:
 
 	def replace(self, replacer: 'TranslationUnit') -> bool:
 		'''Replace original translation text with replacer translation text'''
-		replacer_text_bytes: bytes = replacer.text.encode()
+		replacer_text_bytes: bytes = replacer.text.encode(encoding='utf-8')
 		if (SpecialExpressions.has_special_char(self.text) \
 		    or SpecialExpressions.has_special_char(replacer.text))\
 		    and len(replacer_text_bytes) > self.max_size:
 			
 			return False
 
-		self.text = (replacer_text_bytes[:self.max_size]).decode(errors='ignore')
+		self.text = (replacer_text_bytes[:self.max_size]).decode(encoding='utf-8', errors='ignore')
 		return True
 
 	def to_dict(self) -> dict: # type: ignore
@@ -192,8 +192,8 @@ class TranslationUnit:
 			[
 				self.id.to_bytes(4, byteorder='little'),
 				self.max_size.to_bytes(4, byteorder='little'),
-				self.text.encode()[:self.max_size],
-				b'\x00' * (self.max_size - len(self.text.encode()))
+				self.text.encode(encoding='utf-8')[:self.max_size],
+				b'\x00' * (self.max_size - len(self.text.encode(encoding='utf-8')))
 			]
 		)
 
@@ -280,7 +280,7 @@ class TranslationUnit:
 			candidate: str = translated_strings[i]
 			max_length: int = original_units[i].max_size
 
-			if len(candidate.encode()) > max_length \
+			if len(candidate.encode(encoding='utf-8')) > max_length \
 				   and SpecialExpressions.has_special_char(candidate):
 				
 				result.append(original_units[i])
@@ -373,7 +373,7 @@ class BinaryLocalizationParser:
 		
 		id = int.from_bytes(id_bytes, byteorder='little')
 		original_length = int.from_bytes(bytes_stream.read(4), byteorder='little')
-		text = bytes_stream.read(original_length).decode()
+		text = bytes_stream.read(original_length).decode(encoding='utf-8')
 
 		parsed = TranslationUnit(id, original_length, text)
 
