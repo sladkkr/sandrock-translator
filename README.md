@@ -19,7 +19,7 @@ sandrock-translator -o json -t jp ./thailand ./japanese.json
 
 Use "thailand" translation file as origin and replace with our "japanese.json" strings into usable translation file.
 ```sh
-sandrock-translator -r ./japanese.json ./thailand ./japanese
+sandrock-translator -vpr ./japanese.json ./thailand ./japanese
 ```
 
 Translate Thai file into japanese language in one step.

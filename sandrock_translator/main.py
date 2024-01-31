@@ -69,6 +69,8 @@ class Args(Namespace):
 	source_lang_code: str
 	target_lang_code: str
 	output_file_type: str
+	verbose: bool
+	pedantic: bool
 	first_byte: int
 	last_byte: int
 	replace_file: str
@@ -85,7 +87,8 @@ class Args(Namespace):
 		argparser.add_argument('-s', '--source_lang_code', type=str, default='auto', choices=['auto', *LANG_CODES], metavar="SOURCE_LANG_CODE", help='Force translation source language code. auto will detect language. default: auto')
 		argparser.add_argument('-t', '--target_lang_code', type=str, default='', choices=LANG_CODES, metavar="TARGET_LANG_CODE", help='Target language code. If not specified translation step will be skipped.')
 		argparser.add_argument('-o', '--output_file_type', type=str, default='binary', choices=['binary', 'json'], help='default: binary')
-	
+		argparser.add_argument('-v', '--verbose', action='store_true', help='Print additional information at execution.')
+
 		group_positions = argparser.add_argument_group('Byte positions')
 		group_positions.add_argument('-f', '--first_byte', type=int, default=DEFAULT_FIRST_THAILAND_BYTE, help=f'Translation sector first byte position in decimal number. Program will start translating from this position. default: {DEFAULT_FIRST_THAILAND_BYTE}')
 		group_positions.add_argument('-l', '--last_byte', type=int, default=DEFAULT_LAST_THAILAND_BYTE, help=f'Translation sector last byte position in decimal number. Program will end translation at this position. default: {DEFAULT_LAST_THAILAND_BYTE}')
@@ -95,6 +98,7 @@ class Args(Namespace):
 		group_splicing.add_argument('-R', '--replace_file_type', type=str, default='json', choices=['binary', 'json'], help='Replace file type. default: json')
 		group_splicing.add_argument('--replace_first_byte', type=int, default=-1, help='Replace Translation sector first byte position in decimal number. Must be used with both --replace_file and --replace_last_byte when --replace_file_type is set to binary')
 		group_splicing.add_argument('--replace_last_byte', type=int, default=-1, help='Replace Translation sector last byte position in decimal number. Must be used with both --replace_file and --replace_first_byte when --replace_file_type is set to binary')
+		group_splicing.add_argument('-p', '--pedantic', action='store_true', help='Abort execution when any replacement string does not fit into translation.')
 		
 		group_utils = argparser.add_argument_group('Utils')
 		group_utils.add_argument('-b', '--batch_size', type=int, default=DEFAULT_TRANSLATION_BATCH_SIZE, help=f'Number of strings per translation request. default: {DEFAULT_TRANSLATION_BATCH_SIZE}')
@@ -217,8 +221,9 @@ class TranslationUnit:
 
 	@staticmethod
 	def translate(original_units: list['TranslationUnit'], 
-						original_language: str, 
-						target_language: str) -> TranslationResult:
+				  original_language: str, 
+				  target_language: str,
+				  verbose: bool) -> TranslationResult:
 		'''Returns tuple of translated units and omitted strings'''
 		def into_translation_payload(strings_parted: list[list[str]]) -> list[str]:
 			def contains_at_least_alnum(string: str, occurrences: int) -> bool:
@@ -280,6 +285,9 @@ class TranslationUnit:
 				
 				result.append(original_units[i])
 				omitted_strings += 1
+
+				if verbose:
+					print(f'Translation does not fit with id: {original_units[i].id}')
 			else:
 				result.append(TranslationUnit(original_units[i].id, 
 								  			  max_length, 
@@ -289,9 +297,10 @@ class TranslationUnit:
 
 	@staticmethod
 	def translate_by_batch(original_units: list['TranslationUnit'], 
-			   	  batch_size: int, 
-				  origin_lang_code: str, 
-				  target_lang_code: str) -> 'TranslationResult':
+						   batch_size: int, 
+						   origin_lang_code: str, 
+						   target_lang_code: str,
+						   verbose: bool) -> 'TranslationResult':
 		translated_units: list[TranslationUnit] = []
 		progress_tracker = ProgressTracker(len(original_units))
 		omitted_strings = 0
@@ -301,20 +310,25 @@ class TranslationUnit:
 			try:
 				translated_batch = \
 					TranslationUnit.translate(next_batch,
-													origin_lang_code,
-													target_lang_code)
+											  origin_lang_code,
+											  target_lang_code,
+											  verbose)
 				translated_units += translated_batch.units
 				omitted_strings += translated_batch.omitted
 					
-			except Exception as e:
+			except:
 				progress_tracker.finish()
-				print(f'Occurred at batch: {next_batch}')
-				raise e
+				print(f'Google Translate API Network Error')
+				exit(1)
 		progress_tracker.finish()
 		return TranslationResult(translated_units, omitted_strings)
 
 	@staticmethod
-	def replace_translations(original_units: list['TranslationUnit'], replace_units: list['TranslationUnit']) -> None:
+	def replace_translations(
+		original_units: list['TranslationUnit'], 
+		replace_units: list['TranslationUnit'], 
+		verbose: bool,
+		pedantic: bool) -> None:
 		'''Replace original translation texts with replacer translation texts'''
 		try:
 			replace_map: dict[int, 'TranslationUnit'] = {}
@@ -322,12 +336,20 @@ class TranslationUnit:
 				replace_map[s.id] = s
 
 			replaced_counter = 0
-			for o in original_units:
-				if o.id in replace_map:
-					if o.replace(replace_map[o.id]):
+			for u in original_units:
+				if u.id in replace_map:
+					if u.replace(replace_map[u.id]):
 						replaced_counter += 1
+					else:
+						if verbose:
+							print(f'Too long replace string id: {u.id}')
 				else:
 					raise KeyError()
+				
+			if pedantic and replaced_counter != len(replace_units):
+				print('Aborted because of pedantic flag')
+				exit(1)
+
 			print(f'Replaced {replaced_counter}/{len(replace_units)} units...')
 		except KeyError:
 			print('replace positions mismatch: Selected replace localization sector does not contain original localization unit ID!')
@@ -341,7 +363,6 @@ class TranslationUnit:
 			except KeyError:
 				print('Invalid source json file format!')
 				exit(1)
-
 
 class BinaryLocalizationParser:
 	@staticmethod
@@ -390,9 +411,9 @@ def cli():
 															args.first_byte, 
 															args.last_byte)
 			
-		# Splicing
+		# Replacing
 		if args.replace_file != '':
-			print('Parsing splicing translations...')
+			print('Parsing replacement translations...')
 			replace_units: list[TranslationUnit] = []
 			match args.replace_file_type:
 				case 'binary':
@@ -413,8 +434,8 @@ def cli():
 				case _:
 					pass
 
-			print('Splicing translations...')
-			TranslationUnit.replace_translations(units, replace_units)
+			print('Replacing translations...')
+			TranslationUnit.replace_translations(units, replace_units, args.verbose, args.pedantic)
 			
 
 		# Translating
@@ -423,7 +444,8 @@ def cli():
 			translation_result = TranslationUnit.translate_by_batch(units, 
 																	args.batch_size, 
 																	args.source_lang_code, 
-																	args.target_lang_code)
+																	args.target_lang_code,
+																	args.verbose)
 			print(f'Omitted {translation_result.omitted} too long translations with special expressions...')
 			print(f'Overwriting {len(translation_result.units)} translated units...')
 			units = translation_result.units
