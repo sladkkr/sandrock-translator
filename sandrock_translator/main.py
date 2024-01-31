@@ -357,7 +357,7 @@ class TranslationUnit:
 
 	@staticmethod
 	def replace_json_translations(original_units: list['TranslationUnit'], replace_file_path: str) -> None:
-		with open(replace_file_path, 'r') as replace_file:
+		with open(replace_file_path, 'r', encoding='utf-8') as replace_file:
 			try:
 				units: list[TranslationUnit] = TranslationUnit.from_dict_list(json.load(replace_file)) # type: ignore
 			except KeyError:
@@ -425,7 +425,7 @@ def cli():
 						
 				
 				case 'json':
-					with open(args.replace_file, 'r') as replace_file:
+					with open(args.replace_file, 'r', encoding='utf-8') as replace_file:
 						try:
 							replace_units = TranslationUnit.from_dict_list(json.load(replace_file)) # type: ignore
 						except KeyError:
@@ -462,7 +462,7 @@ def cli():
 					output.write(translated_bytes)
 
 			case 'json':
-				with open(args.output_file, 'w') as output:
+				with open(args.output_file, 'w', encoding='utf-8') as output:
 					print('Externalizing to json...')
 					json.dump([u.to_dict() for u in units], output, indent=4, ensure_ascii=False) # type: ignore
 			
