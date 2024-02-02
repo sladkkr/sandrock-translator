@@ -11,10 +11,10 @@ import progressbar as bar
 
 LANG_CODES: list[str] = [key for key in LANGUAGES.keys()]
 
-DEFAULT_FIRST_THAILAND_BYTE = 92508
+DEFAULT_FIRST_THAILAND_BYTE = 99012
 '''Decimal byte position in translation file'''
 
-DEFAULT_LAST_THAILAND_BYTE = 13807635
+DEFAULT_LAST_THAILAND_BYTE = 13822703
 '''Decimal byte position in translation file'''
 
 DEFAULT_TRANSLATION_BATCH_SIZE = 5
@@ -330,30 +330,32 @@ class TranslationUnit:
 		verbose: bool,
 		pedantic: bool) -> None:
 		'''Replace original translation texts with replacer translation texts'''
-		try:
-			replace_map: dict[int, 'TranslationUnit'] = {}
-			for s in replace_units:
-				replace_map[s.id] = s
+		replace_map: dict[int, 'TranslationUnit'] = {}
+		for u in replace_units:
+			replace_map[u.id] = u
 
-			replaced_counter = 0
-			for u in original_units:
-				if u.id in replace_map:
-					if u.replace(replace_map[u.id]):
-						replaced_counter += 1
-					else:
-						if verbose:
-							print(f'Too long replace string id: {u.id}')
+		replaced_counter = 0
+		for u in original_units:
+			if u.id in replace_map:
+				if u.replace(replace_map[u.id]):
+					replaced_counter += 1
 				else:
-					raise KeyError()
-				
-			if pedantic and replaced_counter != len(replace_units):
-				print('Aborted because of pedantic flag')
-				exit(1)
+					if verbose:
+						print(f'Too long replace string id: {u.id}')
+			else:
+				if verbose:
+					print(f'Missing replace string for original id: {u.id}')
 
-			print(f'Replaced {replaced_counter}/{len(replace_units)} units...')
-		except KeyError:
-			print('replace positions mismatch: Selected replace localization sector does not contain original localization unit ID!')
+				if pedantic:
+					print('Selected replace localization sector does not contain original localization unit ID!')
+					print('Aborted because of pedantic flag')
+					exit(1)
+			
+		if pedantic and replaced_counter != len(replace_units):
+			print('Aborted because of pedantic flag')
 			exit(1)
+
+		print(f'Replaced {replaced_counter}/{len(original_units)} units...')			
 
 	@staticmethod
 	def replace_json_translations(original_units: list['TranslationUnit'], replace_file_path: str) -> None:
