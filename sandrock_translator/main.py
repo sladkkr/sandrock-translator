@@ -5,9 +5,9 @@ from typing import Tuple
 from time import perf_counter
 from dataclasses import dataclass
 import json
-from googletrans import LANGUAGES, Translator
-from googletrans.models import Translated
-import progressbar as bar
+from googletrans import LANGUAGES, Translator # type: ignore
+from googletrans.models import Translated # type: ignore
+import progressbar as bar # type: ignore
 
 LANG_CODES: list[str] = [key for key in LANGUAGES.keys()]
 
@@ -57,8 +57,11 @@ class SpecialExpressions:
 				result.append(value[0:open_position])
 
 			close_position: int = value.find(delimiters[1])
-			# added trailing spaces because Google Translate removes them at translation
-			result.append(f'{value[open_position:close_position + 1]}')
+
+			if close_position == -1:
+				return result
+			
+			result.append(value[open_position:close_position + 1])
 
 			value = value[close_position + 1:]
 
