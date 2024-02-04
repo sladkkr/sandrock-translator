@@ -175,12 +175,12 @@ class TranslationUnit:
 	text: str
 
 	def replace(self, replacer: 'TranslationUnit') -> bool:
-		'''Replace original translation text with replacer translation text'''
+		'''
+			Replace original translation text with replacer translation text. 
+			Returns true when replacement string fits.
+		'''
 		replacer_text_bytes: bytes = replacer.text.encode(encoding='utf-8')
-		if (SpecialExpressions.has_special_char(self.text) \
-		    or SpecialExpressions.has_special_char(replacer.text))\
-		    and len(replacer_text_bytes) > self.max_size:
-			
+		if len(replacer_text_bytes) > self.max_size:
 			return False
 
 		self.text = (replacer_text_bytes[:self.max_size]).decode(encoding='utf-8', errors='ignore')
@@ -344,7 +344,10 @@ class TranslationUnit:
 					replaced_counter += 1
 				else:
 					if verbose:
-						print(f'Too long replace string id: {u.id}')
+						print(f'Too long replace string with id: {u.id}')
+					if pedantic:
+						print('Aborted because of pedantic flag')
+						exit(1)
 			else:
 				if verbose:
 					print(f'Missing replace string for original id: {u.id}')
